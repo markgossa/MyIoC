@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 
@@ -22,7 +21,7 @@ namespace MyIoC
 
             foreach (var service in _services.Where(s => s.Lifetime == ServiceLifetime.Singleton))
             {
-                container.AddSingleton(service.ServiceType, service.ImplementationType);
+                //container.AddSingleton(service.ServiceType, service.ImplementationType);
             }
 
             return container;

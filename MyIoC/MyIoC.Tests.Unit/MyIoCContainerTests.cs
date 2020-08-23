@@ -144,14 +144,14 @@ namespace MyIoC.Tests.Unit
             _sut.AddSingleton(typeof(IClassInterface), null);
         }
 
-        //[Fact]
-        //public void RegistersAComplexDependencyAsSingletonUsingInterface()
-        //{
-        //    _sut.AddSingleton<IClassInterface, ClassSingleParam>();
-        //    _sut.AddSingleton<IComplexDependency, ComplexDependency>();
-        //    var object1 = _sut.GetService<IComplexDependency>();
-        //    var object2 = _sut.GetService<IComplexDependency>();
-        //    Assert.NotEqual(object1, object2);
-        //}
+        [Fact]
+        public void RegistersAComplexDependencyAsSingletonUsingInterface()
+        {
+            _sut.AddSingleton<IComplexDependency, ComplexDependency>();
+            _sut.AddSingleton<IClassInterface, ClassSingleParam>();
+            var object1 = _sut.GetService<IComplexDependency>();
+            var object2 = _sut.GetService<IComplexDependency>();
+            Assert.NotEqual(object1, object2);
+        }
     }
 }

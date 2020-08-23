@@ -1,74 +1,63 @@
-﻿using System;
+﻿using MyIoC.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace MyIoC
 {
     public class MyIoCContainer : IServiceProvider
     {
-        private readonly Dictionary<Type, Func<object>> _registeredServices = new Dictionary<Type, Func<object>>();
-        private readonly List<object> _singletons = new List<object>();
+        private readonly Dictionary<Type, ServiceDescription> _registeredServices = new Dictionary<Type, ServiceDescription>();
 
         public T GetInstance<T>(Type type) => (T)GetInstance(type);
 
-        public object GetInstance(Type type)
-        {
-            return Activator.CreateInstance(type, GetConstructorParameters(type)?.ToArray());
-        }
-
-        //public object GetInstance(Type type)
-        //{
-        //    var constructorParameters = new List<object>();
-
-        //    foreach (var parameter in GetConstructorParameters(type)?.ToArray())
-        //    {
-        //        if (parap.)
-        //    }
-
-        //    return Activator.CreateInstance(type, );
-        //}
+        public object GetInstance(Type type) => Activator.CreateInstance(type, GetConstructorParameters(type)?.ToArray());
 
         public void AddSingleton<TService, TImplementation>() where TImplementation : TService
         {
-            object action() => _singletons.LastOrDefault(s => s is TImplementation);
-            if (_registeredServices.ContainsKey(typeof(TService)))
-            {
-                _registeredServices[typeof(TService)] = action;
-                _singletons.RemoveAll(s => s is TService);
-            }
-            else
-            {
-                _registeredServices.Add(typeof(TService), action);
-            }
-
-            _singletons.Add(GetInstance(typeof(TImplementation)));
+            var serviceDescription = new ServiceDescription(typeof(TService), typeof(TImplementation),
+                    MyIoCServiceLifetime.Singleton);
+            AddRegisteredService(serviceDescription);
         }
-
-        public void AddSingleton(Type service, Type implementation)
+        
+        public void AddSingleton(Type serviceType, Type implementationType)
         {
-            if (_registeredServices.ContainsKey(service))
+            var serviceDescription = new ServiceDescription(serviceType, implementationType,
+                    MyIoCServiceLifetime.Singleton);
+            AddRegisteredService(serviceDescription);
+        }
+
+        private void AddRegisteredService(ServiceDescription serviceDescription)
+        {
+            if (_registeredServices.ContainsKey(serviceDescription.ServiceType))
             {
-                _registeredServices[service] = action;
-                _singletons.RemoveAll(s => s.GetType() == service);
+                _registeredServices[serviceDescription.ServiceType] = serviceDescription;
             }
             else
             {
-                _registeredServices.Add(service, action);
+                _registeredServices.Add(serviceDescription.ServiceType, serviceDescription);
             }
-
-            if (implementation == null)
-            {
-                return;
-            }
-
-            object action() => _singletons.LastOrDefault(s => s.GetType() == implementation);
-            _singletons.Add(GetInstance(implementation));
         }
 
-        public void AddTransient<T1, T2>() where T2 : T1 => _registeredServices.Add(typeof(T1), () => GetInstance(typeof(T2)));
+        public void AddTransient<TService, TImplementation>() where TImplementation : TService
+        {
+            var serviceDescription = new ServiceDescription(typeof(TService), typeof(TImplementation),
+                MyIoCServiceLifetime.Transient);
 
-        public T GetService<T>() => (T)_registeredServices.GetValueOrDefault(typeof(T))();
+            _registeredServices.Add(typeof(TService), serviceDescription);
+        }
+
+        public T GetService<T>()
+        {
+            var serviceDescription = _registeredServices.GetValueOrDefault(typeof(T));
+            if (serviceDescription.ServiceLifetime == MyIoCServiceLifetime.Singleton)
+            {
+                serviceDescription.ServiceInstance ??= GetInstance<T>(serviceDescription.ImplementationType);
+                return (T)serviceDescription.ServiceInstance;
+            }
+
+            return GetInstance<T>(serviceDescription.ImplementationType);
+        }
 
         private object[] GetConstructorParameters(Type type)
         {
@@ -82,15 +71,6 @@ namespace MyIoC
             return constructors.First().GetParameters().Select(x => GetInstance(x.ParameterType)).ToArray();
         }
 
-        public object GetService(Type serviceType)
-        {
-            _registeredServices.TryGetValue(serviceType, out var value);
-            return value() ?? null;
-        }
-
-        //public object GetService(Type serviceType)
-        //{
-        //    return _registeredServices.GetValueOrDefault(serviceType)();
-        //}
+        public object GetService(Type serviceType) => throw new NotImplementedException();
     }
 }
