@@ -27,7 +27,6 @@ namespace MyIoC
         {
             var serviceDescription = new ServiceDescription(typeof(TService), typeof(TImplementation),
                 MyIoCServiceLifetime.Transient);
-
             _registeredServices.Add(typeof(TService), serviceDescription);
         }
 
