@@ -12,146 +12,113 @@ namespace MyIoC.Tests.Unit
         [Fact]
         public void ReturnsInstanceOfType()
         {
-            var actual = _sut.GetInstance(typeof(ClassNoParams));
-            Assert.IsType<ClassNoParams>(actual);
-        }
-
-        [Fact]
-        public void ReturnsInstanceOfTypeWithSingleParameter()
-        {
-            var actual = (ClassSingleParam)_sut.GetInstance(typeof(ClassSingleParam));
-            Assert.IsType<ClassSingleParam>(actual);
-            Assert.IsType<ClassNoParams>(actual.Value);
-        }
-
-        [Fact]
-        public void ReturnsInstanceOfTypeWithMultipleParameters()
-        {
-            var actual = (ClassMultipleParams)_sut.GetInstance(typeof(ClassMultipleParams));
-            Assert.IsType<ClassMultipleParams>(actual);
-            Assert.IsType<ClassNoParams>(actual.Value1);
-            Assert.IsType<ClassNoParams2>(actual.Value2);
+            var actual = _sut.GetInstance(typeof(Cylinder));
+            Assert.IsType<Cylinder>(actual);
         }
 
         [Fact]
         public void ReturnsInstanceOfTypeWithParametersWhichHaveParameters()
         {
-            var actual = (ClassNestedParams)_sut.GetInstance(typeof(ClassNestedParams));
-            Assert.IsType<ClassNestedParams>(actual);
-            Assert.IsType<ClassNoParams>(actual.Value1);
-            Assert.IsType<ClassSingleParam>(actual.Value2);
+            _sut.AddSingleton<IEngine, VEngine>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            var actual = (VEngine)_sut.GetInstance(typeof(IEngine));
+            Assert.IsType<VEngine>(actual);
+            Assert.IsType<Cylinder>(actual.Cylinder);
+            Assert.IsType<SparkPlug>(actual.SparkPlug);
         }
 
         [Fact]
         public void ReturnsInstanceOfTypeWithSingleParameterUsingGenerics()
         {
-            var actual = _sut.GetInstance<ClassSingleParam>(typeof(ClassSingleParam));
-            Assert.IsType<ClassSingleParam>(actual);
-            Assert.IsType<ClassNoParams>(actual.Value);
-        }
-        
-        [Fact]
-        public void RegistersATypeUsingInterface()
-        {
-            _sut.AddSingleton<IClassInterface, ClassSingleParam>();
-            var actual = _sut.GetService<IClassInterface>();
-            Assert.IsType<ClassSingleParam>(actual);
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            _sut.AddSingleton<IEngine, VEngine>();
+            var actual = _sut.GetInstance<SparkPlug>(typeof(SparkPlug));
+            Assert.IsType<SparkPlug>(actual);
+            Assert.Equal(10, actual.Size);
         }
 
         [Fact]
-        public void RegistersATypeWithDependenciesAsSingletonUsingInterface()
-        {
-            _sut.AddSingleton<IClassInterface, ClassNestedParams>();
-            var actual = _sut.GetService<IClassInterface>();
-            Assert.IsType<ClassNestedParams>(actual);
-        }
-
-        [Fact]
-        public void ThrowsIfTypeNotRegistered()
-        {
-            Assert.Throws<NullReferenceException>(() => _sut.GetService<IClassInterface>());
-        }
+        public void ThrowsIfTypeNotRegistered() => Assert.Throws<ApplicationException>(() => _sut.GetService<IEngine>());
 
         [Fact]
         public void RegistersATypeAsSingletonUsingInterface()
         {
-            _sut.AddSingleton<IClassInterface, ClassSingleParam>();
-            var object1 = _sut.GetService<IClassInterface>();
-            var object2 = _sut.GetService<IClassInterface>();
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            var object1 = _sut.GetService<ISparkPlug>();
+            var object2 = _sut.GetService<ISparkPlug>();
             Assert.Equal(object1, object2);
-            Assert.IsType<ClassSingleParam>(object1);
-            Assert.IsType<ClassSingleParam>(object2);
-        }
-
-        [Fact]
-        public void RegistersMultipleTypesAsSingletonUsingInterface()
-        {
-            _sut.AddSingleton<IClassInterface2, ClassNoParams2>();
-            _sut.AddSingleton<IClassInterface, ClassSingleParam>();
-            var object1 = _sut.GetService<IClassInterface2>();
-            var object2 = _sut.GetService<IClassInterface2>();
-            Assert.Equal(object1, object2);
-            Assert.IsType<ClassNoParams2>(object1);
+            Assert.IsType<SparkPlug>(object1);
+            Assert.IsType<SparkPlug>(object2);
         }
 
         [Fact]
         public void RegistersATypeAsSingletonTwiceUsingInterfaceAndReturnsLastOneRegistered()
         {
-            _sut.AddSingleton<IClassInterface, ClassSingleParam>();
-            _sut.AddSingleton<IClassInterface, ClassNestedParams>();
-            var object1 = _sut.GetService<IClassInterface>();
-            var object2 = _sut.GetService<IClassInterface>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            _sut.AddSingleton<IEngine, VEngine>();
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            var object1 = _sut.GetService<IEngine>();
+            var object2 = _sut.GetService<IEngine>();
             Assert.Equal(object1, object2);
-            Assert.IsType<ClassNestedParams>(object1);
-            Assert.IsType<ClassNestedParams>(object2);
+            Assert.IsType<VEngine>(object1);
+            Assert.IsType<VEngine>(object2);
         }
 
         [Fact]
         public void RegistersATypeAsTransientUsingInterface()
         {
-            _sut.AddTransient<IClassInterface, ClassSingleParam>();
-            var object1 = _sut.GetService<IClassInterface>();
-            var object2 = _sut.GetService<IClassInterface>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            _sut.AddTransient<ISparkPlug, SparkPlug>();
+            var object1 = _sut.GetService<ISparkPlug>();
+            var object2 = _sut.GetService<ISparkPlug>();
             Assert.NotEqual(object1, object2);
         }
 
         [Fact]
         public void RegistersATypeAsSingletonUsingInterface_Overload1()
         {
-            _sut.AddSingleton(typeof(IClassInterface), typeof(ClassSingleParam));
-            var object1 = _sut.GetService<IClassInterface>();
-            var object2 = _sut.GetService<IClassInterface>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            _sut.AddSingleton(typeof(ISparkPlug), typeof(SparkPlug));
+            var object1 = _sut.GetService<ISparkPlug>();
+            var object2 = _sut.GetService<ISparkPlug>();
             Assert.Equal(object1, object2);
-            Assert.IsType<ClassSingleParam>(object1);
-            Assert.IsType<ClassSingleParam>(object2);
+            Assert.IsType<SparkPlug>(object1);
+            Assert.IsType<SparkPlug>(object2);
         }
 
         [Fact]
         public void RegistersATypeTwiceAsSingletonUsingInterface_Overload1()
         {
-            _sut.AddSingleton(typeof(IClassInterface), typeof(ClassSingleParam));
-            _sut.AddSingleton(typeof(IClassInterface), typeof(ClassNestedParams));
-            var object1 = _sut.GetService<IClassInterface>();
-            var object2 = _sut.GetService<IClassInterface>();
+            _sut.AddSingleton(typeof(ICylinder), typeof(Cylinder));
+            _sut.AddSingleton(typeof(ISparkPlug), typeof(SparkPlug));
+            _sut.AddSingleton(typeof(IEngine), typeof(SparkPlug));
+            _sut.AddSingleton(typeof(IEngine), typeof(VEngine));
+            var object1 = _sut.GetService<IEngine>();
+            var object2 = _sut.GetService<IEngine>();
             Assert.Equal(object1, object2);
-            Assert.IsType<ClassNestedParams>(object1);
-            Assert.IsType<ClassNestedParams>(object2);
+            Assert.IsType<VEngine>(object1);
+            Assert.IsType<VEngine>(object2);
         }
 
         [Fact]
-        public void RegistersASingletonWithoutImplementationAndDoesNotThrow()
-        {
-            _sut.AddSingleton(typeof(IClassInterface), null);
-        }
+        public void RegistersASingletonWithoutImplementationAndDoesNotThrow() => _sut.AddSingleton(typeof(IEngine), null);
 
         [Fact]
         public void RegistersAComplexDependencyAsSingletonUsingInterface()
         {
-            _sut.AddSingleton<IComplexDependency, ComplexDependency>();
-            _sut.AddSingleton<IClassInterface, ClassSingleParam>();
-            var object1 = _sut.GetService<IComplexDependency>();
-            var object2 = _sut.GetService<IComplexDependency>();
-            Assert.NotEqual(object1, object2);
+            _sut.AddSingleton<ICar, Hatchback>();
+            _sut.AddSingleton<IEngine, VEngine>();
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            var car1 = _sut.GetService<ICar>();
+            var car2 = _sut.GetService<ICar>();
+            Assert.Equal(car1, car2);
+            Assert.Equal(10, car1.GetEngine().SparkPlug.Size);
+            Assert.IsType<VEngine>(car1.GetEngine());
         }
     }
 }

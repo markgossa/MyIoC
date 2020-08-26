@@ -2,7 +2,7 @@
 
 namespace MyIoC.Tests.Unit.Models
 {
-    internal class ClassNoParams2 : IClassInterface2
+    internal class House : IBuilding
     {
     }
 }
