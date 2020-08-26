@@ -10,36 +10,6 @@ namespace MyIoC.Tests.Unit
         private readonly MyIoCContainer _sut = new MyIoCContainer();
 
         [Fact]
-        public void ReturnsInstanceOfType()
-        {
-            var actual = _sut.GetInstance(typeof(Cylinder));
-            Assert.IsType<Cylinder>(actual);
-        }
-
-        [Fact]
-        public void ReturnsInstanceOfTypeWithParametersWhichHaveParameters()
-        {
-            _sut.AddSingleton<IEngine, VEngine>();
-            _sut.AddSingleton<ICylinder, Cylinder>();
-            _sut.AddSingleton<ISparkPlug, SparkPlug>();
-            var actual = (VEngine)_sut.GetInstance(typeof(IEngine));
-            Assert.IsType<VEngine>(actual);
-            Assert.IsType<Cylinder>(actual.Cylinder);
-            Assert.IsType<SparkPlug>(actual.SparkPlug);
-        }
-
-        [Fact]
-        public void ReturnsInstanceOfTypeWithSingleParameterUsingGenerics()
-        {
-            _sut.AddSingleton<ICylinder, Cylinder>();
-            _sut.AddSingleton<ISparkPlug, SparkPlug>();
-            _sut.AddSingleton<IEngine, VEngine>();
-            var actual = _sut.GetInstance<SparkPlug>(typeof(SparkPlug));
-            Assert.IsType<SparkPlug>(actual);
-            Assert.Equal(10, actual.Size);
-        }
-
-        [Fact]
         public void ThrowsIfTypeNotRegistered() => Assert.Throws<ApplicationException>(() => _sut.GetService<IEngine>());
 
         [Fact]
@@ -119,6 +89,15 @@ namespace MyIoC.Tests.Unit
             Assert.Equal(car1, car2);
             Assert.Equal(10, car1.GetEngine().SparkPlug.Size);
             Assert.IsType<VEngine>(car1.GetEngine());
+        }
+
+        [Fact]
+        public void ResolvesConcreteDependencies()
+        {
+            _sut.AddSingleton<IBuilding, House>();
+            _sut.AddSingleton<Room, Room>();
+            var actual = _sut.GetService<IBuilding>();
+            Assert.Equal(1, actual.Room.Beds);
         }
     }
 }

@@ -9,18 +9,6 @@ namespace MyIoC
     {
         private readonly Dictionary<Type, ServiceDescription> _registeredServices = new Dictionary<Type, ServiceDescription>();
 
-        public T GetInstance<T>(Type type) => (T)GetInstance(type);
-
-        public object GetInstance(Type type)
-        {
-            if (type.IsInterface)
-            {
-                return GetService(type);
-            }
-
-            return Activator.CreateInstance(type, GetConstructorParameters(type)?.ToArray());
-        }
-
         public void AddSingleton<TService, TImplementation>() where TImplementation : TService
         {
             var serviceDescription = new ServiceDescription(typeof(TService), typeof(TImplementation),
@@ -35,18 +23,6 @@ namespace MyIoC
             AddRegisteredService(serviceDescription);
         }
 
-        private void AddRegisteredService(ServiceDescription serviceDescription)
-        {
-            if (_registeredServices.ContainsKey(serviceDescription.ServiceType))
-            {
-                _registeredServices[serviceDescription.ServiceType] = serviceDescription;
-            }
-            else
-            {
-                _registeredServices.Add(serviceDescription.ServiceType, serviceDescription);
-            }
-        }
-
         public void AddTransient<TService, TImplementation>() where TImplementation : TService
         {
             var serviceDescription = new ServiceDescription(typeof(TService), typeof(TImplementation),
@@ -55,37 +31,7 @@ namespace MyIoC
             _registeredServices.Add(typeof(TService), serviceDescription);
         }
 
-        public T GetService<T>()
-        {
-            var serviceDescription = _registeredServices.GetValueOrDefault(typeof(T));
-            if (serviceDescription is null)
-            {
-                throw new ApplicationException($"{typeof(T).FullName} could not be resolved to an implementation");
-            }
-
-            if (serviceDescription.ServiceLifetime == MyIoCServiceLifetime.Singleton)
-            {
-                serviceDescription.ServiceInstance ??= GetInstance<T>(serviceDescription.ImplementationType);
-                return (T)serviceDescription.ServiceInstance;
-            }
-
-            return GetInstance<T>(serviceDescription.ImplementationType);
-        }
-
-        private object[] GetConstructorParameters(Type type)
-        {
-            if (type is null)
-            {
-                return null;
-            }
-
-            var constructors = type.GetConstructors();
-
-
-            // don't create a new instance of the constructor parameters. Get the service instead. This will make sure it uses the container to resolve the services.
-            //return constructors.First().GetParameters().Select(x => GetInstance(x.ParameterType)).ToArray(); 
-            return constructors.First().GetParameters().Select(x => GetService(x.ParameterType)).ToArray(); 
-        }
+        public T GetService<T>() => (T)GetService(typeof(T));
 
         public object GetService(Type serviceType)
         {
@@ -103,5 +49,14 @@ namespace MyIoC
 
             return GetInstance(serviceDescription.ImplementationType);
         }
+
+        private void AddRegisteredService(ServiceDescription serviceDescription)
+        {
+            _registeredServices[serviceDescription.ServiceType] = serviceDescription;
+        }
+
+        private object[] GetConstructorParameters(Type type) => type.GetConstructors().First().GetParameters().Select(x => GetService(x.ParameterType)).ToArray();
+
+        private object GetInstance(Type type) => Activator.CreateInstance(type, GetConstructorParameters(type)?.ToArray());
     }
 }

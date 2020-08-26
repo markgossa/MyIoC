@@ -9,8 +9,8 @@ namespace MyIoC.Models
         public MyIoCServiceLifetime ServiceLifetime { get;}
         public object ServiceInstance { get; set; }
 
-        public ServiceDescription(Type serviceType, Type implementationType, MyIoCServiceLifetime serviceLifetime, 
-             object serviceInstance = null)
+        public ServiceDescription(Type serviceType, Type implementationType, 
+            MyIoCServiceLifetime serviceLifetime, object serviceInstance = null)
         {
             ServiceType = serviceType;
             ImplementationType = implementationType;

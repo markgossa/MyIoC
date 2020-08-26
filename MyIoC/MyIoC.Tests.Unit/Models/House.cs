@@ -2,7 +2,13 @@
 
 namespace MyIoC.Tests.Unit.Models
 {
-    internal class House : IBuilding
+    public class House : IBuilding
     {
+        public Room Room { get; }
+
+        public House(Room room)
+        {
+            Room = room;
+        }
     }
 }
