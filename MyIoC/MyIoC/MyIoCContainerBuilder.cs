@@ -19,10 +19,12 @@ namespace MyIoC
 
             //var serviceNames = _services.Where(s => s.Lifetime == ServiceLifetime.Singleton).Select(x => x.ServiceType.Name).OrderBy(x => x);
 
-            foreach (var service in _services.Where(s => s.Lifetime == ServiceLifetime.Singleton))
-            {
-                //container.AddSingleton(service.ServiceType, service.ImplementationType);
-            }
+            //foreach (var service in _services.Where(s => s.Lifetime == ServiceLifetime.Singleton))
+            //{
+            //    container.AddSingleton(service.ServiceType, service.ImplementationType);
+            //}
+
+            container.Populate(_services);
 
             return container;
         }

@@ -1,6 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using MyIoC.Tests.Unit.Contracts;
 using MyIoC.Tests.Unit.Models;
 using System;
+using System.Net.Http;
 using Xunit;
 
 namespace MyIoC.Tests.Unit
@@ -11,6 +13,16 @@ namespace MyIoC.Tests.Unit
 
         [Fact]
         public void ThrowsIfTypeNotRegistered() => Assert.Throws<ApplicationException>(() => _sut.GetService<IEngine>());
+
+        [Fact]
+        public void RegistersItselfAsIServiceProvider()
+        {
+            _sut.AddSingleton<ISparkPlug, SparkPlug>();
+            _sut.AddSingleton<ICylinder, Cylinder>();
+            var serviceProvider = _sut.GetService<IServiceProvider>();
+            Assert.Equal(_sut, serviceProvider);
+            Assert.IsAssignableFrom<IServiceProvider>(serviceProvider);
+        }
 
         [Fact]
         public void RegistersATypeAsSingletonUsingInterface()
@@ -98,6 +110,55 @@ namespace MyIoC.Tests.Unit
             _sut.AddSingleton<Room, Room>();
             var actual = _sut.GetService<IBuilding>();
             Assert.Equal(1, actual.Room.Beds);
+        }
+
+        [Fact]
+        public void PopulatesUsingImplentationFactory()
+        {
+            const string baseAddress = "https://thing.com/";
+            var services = new ServiceCollection();
+            services.AddSingleton(typeof(HttpClient), s =>
+            {
+                var httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri(baseAddress)
+                };
+                return httpClient;
+            });
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<HttpClient>();
+
+            Assert.Equal(baseAddress, actual.BaseAddress.ToString());
+        }
+
+        [Fact]
+        public void PopulatesUsingImplentationInstance()
+        {
+            const string baseAddress = "https://thing.com/";
+            var services = new ServiceCollection();
+            services.AddSingleton(new HttpClient
+                {
+                    BaseAddress = new Uri(baseAddress)
+                });
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<HttpClient>();
+
+            Assert.Equal(baseAddress, actual.BaseAddress.ToString());
+        }
+
+        [Fact]
+        public void PopulatesUsingImplentationtype()
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton<ISparkPlug, SparkPlug>();
+            services.AddSingleton<ICylinder, Cylinder>();
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<ISparkPlug>();
+
+            Assert.Equal(10, actual.Size);
         }
     }
 }
