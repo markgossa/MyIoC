@@ -40,34 +40,17 @@ namespace MyIoC
 
         public object GetService(Type serviceType)
         {
-            var serviceDescription = _registeredServices.GetValueOrDefault(serviceType.GUID);
-            if (serviceDescription is null)
-            {
-                throw new ApplicationException($"{serviceType.FullName} could not be resolved to an implementation");
-            }
+            var serviceDescription = FindServiceType(serviceType);
+            IsNullServiceDescription(serviceType, serviceDescription);
 
             if (serviceDescription.ServiceLifetime == ServiceLifetime.Singleton)
             {
-                if (serviceDescription.ImplementationFactory is { })
+                serviceDescription.ServiceInstance ??= serviceDescription switch
                 {
-                    serviceDescription.ServiceInstance = serviceDescription.ImplementationFactory(this);
-                }
-                else if (serviceDescription.ServiceInstance is { })
-                {
-                    return serviceDescription.ServiceInstance;
-                }
-                else if (serviceDescription.ImplementationType is { })
-                {
-                    if (serviceDescription.ImplementationType.ContainsGenericParameters)
-                    {
-                        var withTypeArguments = serviceDescription.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
-                        serviceDescription.ServiceInstance = CreateInstance(withTypeArguments);
-                    }
-                    else
-                    {
-                        serviceDescription.ServiceInstance = CreateInstance(serviceDescription.ImplementationType);
-                    }
-                }
+                    { ImplementationFactory: { } } => serviceDescription.ImplementationFactory(this),
+                    { ImplementationType: { } } => CreateImplementationType(serviceType, serviceDescription),
+                    _ => serviceDescription.ServiceInstance
+                };
 
                 return serviceDescription.ServiceInstance;
             }
@@ -75,26 +58,42 @@ namespace MyIoC
             return CreateInstance(serviceDescription.ImplementationType);
         }
 
+        private ServiceDescription FindServiceType(Type serviceType) => _registeredServices.GetValueOrDefault(serviceType.GUID);
+
+        private static void IsNullServiceDescription(Type serviceType, ServiceDescription serviceDescription)
+        {
+            if (serviceDescription is null)
+            {
+                throw new ApplicationException($"{serviceType.FullName} could not be resolved to an implementation");
+            }
+        }
+
+        private object CreateImplementationType(Type serviceType, ServiceDescription serviceDescription)
+        {
+            if (serviceDescription.ImplementationType.ContainsGenericParameters)
+            {
+                var withTypeArguments = serviceDescription.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
+                return CreateInstance(withTypeArguments);
+            }
+            else
+            {
+                return CreateInstance(serviceDescription.ImplementationType);
+            }
+        }
+
         public void Populate(IServiceCollection services)
         {
             foreach (var service in services)
             {
-                ServiceDescription serviceDescription = null;
-                if (service.ImplementationInstance is { })
+                var serviceDescription = service switch
                 {
-                    serviceDescription = new ServiceDescription(service.ServiceType, service.ImplementationType,
-                            service.Lifetime, null, service.ImplementationInstance);
-                }
-                else if (service.ImplementationFactory is { })
-                {
-                    serviceDescription = new ServiceDescription(service.ServiceType, service.ImplementationType,
-                        service.Lifetime, service.ImplementationFactory);
-                }
-                else
-                {
-                    serviceDescription = new ServiceDescription(service.ServiceType, service.ImplementationType,
-                        service.Lifetime);
-                }
+                    { ImplementationInstance: { } } => new ServiceDescription(service.ServiceType, service.ImplementationType,
+                            service.Lifetime, null, service.ImplementationInstance),
+                    { ImplementationFactory: { } } => new ServiceDescription(service.ServiceType, service.ImplementationType,
+                        service.Lifetime, service.ImplementationFactory),
+                    _ => new ServiceDescription(service.ServiceType, service.ImplementationType,
+                        service.Lifetime)
+                };
 
                 RegisterService(serviceDescription);
             }
@@ -108,11 +107,7 @@ namespace MyIoC
         private object CreateInstance(Type type)
         {
             var constructorParameters = type.GetConstructors().First().GetParameters();
-
-            var constructorParameterObjects = constructorParameters.Select(x =>
-            {
-                return GetService(x.ParameterType);
-            }).ToArray();
+            var constructorParameterObjects = constructorParameters.Select(x => GetService(x.ParameterType)).ToArray();
 
             return Activator.CreateInstance(type, constructorParameterObjects?.ToArray());
         }
