@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyIoC.Tests.Unit.Contracts;
 using MyIoC.Tests.Unit.Models;
 using System;
+using System.Linq;
 using System.Net.Http;
 using Xunit;
 
@@ -113,7 +115,7 @@ namespace MyIoC.Tests.Unit
         }
 
         [Fact]
-        public void PopulatesUsingImplentationFactory()
+        public void PopulateAndGetServiceUsingImplentationFactory()
         {
             const string baseAddress = "https://thing.com/";
             var services = new ServiceCollection();
@@ -133,7 +135,7 @@ namespace MyIoC.Tests.Unit
         }
 
         [Fact]
-        public void PopulatesUsingImplentationInstance()
+        public void PopulateAndGetServiceUsingImplentationInstance()
         {
             const string baseAddress = "https://thing.com/";
             var services = new ServiceCollection();
@@ -149,7 +151,7 @@ namespace MyIoC.Tests.Unit
         }
 
         [Fact]
-        public void PopulatesUsingImplentationtype()
+        public void PopulateAndGetServiceUsingImplentationtype()
         {
             var services = new ServiceCollection();
             services.AddSingleton<ISparkPlug, SparkPlug>();
@@ -159,6 +161,51 @@ namespace MyIoC.Tests.Unit
             var actual = _sut.GetService<ISparkPlug>();
 
             Assert.Equal(10, actual.Size);
+        }
+
+        [Fact]
+        public void PopulateAndGetServiceThatImplementsGenericInterface()
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton<IMapper<IEngine, EngineInfo>, EngineMapper>();
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<IMapper<IEngine, EngineInfo>>();
+
+            Assert.IsType<EngineMapper>(actual);
+        }
+        
+        [Fact]
+        public void PopulateAndGetServiceTypeWithGenericParameters()
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton<IBuilder<ICar>, ComponentBuilder<ICar>>();
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<IBuilder<ICar>>();
+
+            Assert.IsType<ComponentBuilder<ICar>>(actual);
+        }
+
+        [Fact]
+        public void PopulateAndGetServiceWhereConstructorParametersContainGenericType()
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton <IAuditor, Auditor>();
+            services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+            services.AddSingleton(typeof(ILoggerFactory), typeof(LoggerFactory));
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<IAuditor>();
+
+            Assert.IsType<Auditor>(actual);
+        }
+
+        [Fact]
+        public void Testing()
+        {
+            var type = typeof(Logger<Microsoft.AspNetCore.Hosting.IApplicationLifetime>);
+            Activator.CreateInstance(type, new LoggerFactory());
         }
     }
 }

@@ -6,6 +6,6 @@ namespace MyIoC.Tests.Unit.Contracts
     {
         ICylinder Cylinder { get; }
         ISparkPlug SparkPlug { get; }
-        const string Shape = "V";
+        string Shape { get; }
     }
 }

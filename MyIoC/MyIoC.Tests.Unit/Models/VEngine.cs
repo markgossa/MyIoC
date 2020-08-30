@@ -6,7 +6,7 @@ namespace MyIoC.Tests.Unit.Models
     {
         public ICylinder Cylinder { get; }
         public ISparkPlug SparkPlug { get; }
-        public const string Shape = "V";
+        public string Shape => "V";
 
         public VEngine(ICylinder cylinder, ISparkPlug sparkPlug)
         {

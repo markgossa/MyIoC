@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyIoC.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace MyIoC
 {
@@ -58,7 +60,15 @@ namespace MyIoC
                 }
                 else if (serviceDescription.ImplementationType is { })
                 {
-                    serviceDescription.ServiceInstance = CreateInstance(serviceDescription.ImplementationType);
+                    if (serviceDescription.ImplementationType.ContainsGenericParameters)
+                    {
+                        var withTypeArguments = serviceDescription.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
+                        serviceDescription.ServiceInstance = CreateInstance(withTypeArguments);
+                    }
+                    else
+                    {
+                        serviceDescription.ServiceInstance = CreateInstance(serviceDescription.ImplementationType);
+                    }
                 }
                 
                 return serviceDescription.ServiceInstance;
@@ -97,8 +107,16 @@ namespace MyIoC
 
         private void RegisterService(ServiceDescription serviceDescription) => _registeredServices[serviceDescription.ServiceType.GUID] = serviceDescription;
 
-        private object[] GetConstructorParameters(Type type) => type.GetConstructors().First().GetParameters().Select(x => GetService(x.ParameterType)).ToArray();
+        private object CreateInstance(Type type)
+        {
+            var constructorParameters = type.GetConstructors().First().GetParameters();
 
-        private object CreateInstance(Type type) => Activator.CreateInstance(type, GetConstructorParameters(type)?.ToArray());
+            var constructorParameterObjects = constructorParameters.Select(x =>
+            {
+                return GetService(x.ParameterType);
+            }).ToArray();
+
+            return Activator.CreateInstance(type, constructorParameterObjects?.ToArray());
+        }
     }
 }
