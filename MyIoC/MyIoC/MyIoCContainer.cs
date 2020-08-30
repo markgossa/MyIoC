@@ -58,29 +58,6 @@ namespace MyIoC
             return CreateInstance(serviceDescription.ImplementationType);
         }
 
-        private ServiceDescription FindServiceType(Type serviceType) => _registeredServices.GetValueOrDefault(serviceType.GUID);
-
-        private static void IsNullServiceDescription(Type serviceType, ServiceDescription serviceDescription)
-        {
-            if (serviceDescription is null)
-            {
-                throw new ApplicationException($"{serviceType.FullName} could not be resolved to an implementation");
-            }
-        }
-
-        private object CreateImplementationType(Type serviceType, ServiceDescription serviceDescription)
-        {
-            if (serviceDescription.ImplementationType.ContainsGenericParameters)
-            {
-                var withTypeArguments = serviceDescription.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
-                return CreateInstance(withTypeArguments);
-            }
-            else
-            {
-                return CreateInstance(serviceDescription.ImplementationType);
-            }
-        }
-
         public void Populate(IServiceCollection services)
         {
             foreach (var service in services)
@@ -103,6 +80,29 @@ namespace MyIoC
                 ServiceLifetime.Singleton, null, this));
 
         private void RegisterService(ServiceDescription serviceDescription) => _registeredServices[serviceDescription.ServiceType.GUID] = serviceDescription;
+
+        private ServiceDescription FindServiceType(Type serviceType) => _registeredServices.GetValueOrDefault(serviceType.GUID);
+
+        private static void IsNullServiceDescription(Type serviceType, ServiceDescription serviceDescription)
+        {
+            if (serviceDescription is null)
+            {
+                throw new ApplicationException($"{serviceType.FullName} could not be resolved to an implementation");
+            }
+        }
+
+        private object CreateImplementationType(Type serviceType, ServiceDescription serviceDescription)
+        {
+            if (serviceDescription.ImplementationType.ContainsGenericParameters)
+            {
+                var withTypeArguments = serviceDescription.ImplementationType.MakeGenericType(serviceType.GenericTypeArguments);
+                return CreateInstance(withTypeArguments);
+            }
+            else
+            {
+                return CreateInstance(serviceDescription.ImplementationType);
+            }
+        }
 
         private object CreateInstance(Type type)
         {

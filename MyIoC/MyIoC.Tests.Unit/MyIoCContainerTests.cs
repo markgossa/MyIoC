@@ -3,8 +3,6 @@ using Microsoft.Extensions.Logging;
 using MyIoC.Tests.Unit.Contracts;
 using MyIoC.Tests.Unit.Models;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using Xunit;
 
@@ -141,9 +139,9 @@ namespace MyIoC.Tests.Unit
             const string baseAddress = "https://thing.com/";
             var services = new ServiceCollection();
             services.AddSingleton(new HttpClient
-                {
-                    BaseAddress = new Uri(baseAddress)
-                });
+            {
+                BaseAddress = new Uri(baseAddress)
+            });
 
             _sut.Populate(services);
             var actual = _sut.GetService<HttpClient>();
@@ -175,7 +173,7 @@ namespace MyIoC.Tests.Unit
 
             Assert.IsType<EngineMapper>(actual);
         }
-        
+
         [Fact]
         public void PopulateAndGetServiceTypeWithGenericParameters()
         {
@@ -192,7 +190,7 @@ namespace MyIoC.Tests.Unit
         public void PopulateAndGetServiceWhereConstructorParametersContainGenericType()
         {
             var services = new ServiceCollection();
-            services.AddSingleton <IAuditor, Auditor>();
+            services.AddSingleton<IAuditor, Auditor>();
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddSingleton(typeof(ILoggerFactory), typeof(LoggerFactory));
 
