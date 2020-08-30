@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyIoC.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 
 namespace MyIoC
 {
@@ -23,7 +21,7 @@ namespace MyIoC
                     ServiceLifetime.Singleton);
             RegisterService(serviceDescription);
         }
-        
+
         public void AddSingleton(Type serviceType, Type implementationType)
         {
             var serviceDescription = new ServiceDescription(serviceType, implementationType,
@@ -70,7 +68,7 @@ namespace MyIoC
                         serviceDescription.ServiceInstance = CreateInstance(serviceDescription.ImplementationType);
                     }
                 }
-                
+
                 return serviceDescription.ServiceInstance;
             }
 

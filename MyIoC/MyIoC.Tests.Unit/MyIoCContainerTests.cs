@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MyIoC.Tests.Unit.Contracts;
 using MyIoC.Tests.Unit.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Xunit;
@@ -202,10 +203,17 @@ namespace MyIoC.Tests.Unit
         }
 
         [Fact]
-        public void Testing()
+        public void PopulateAndGetServiceWhereConstructorParametersContainIEnumerable()
         {
-            var type = typeof(Logger<Microsoft.AspNetCore.Hosting.IApplicationLifetime>);
-            Activator.CreateInstance(type, new LoggerFactory());
+            var services = new ServiceCollection();
+            services.AddSingleton<Street, Street>();
+            services.AddSingleton(typeof(IEnumerable<House>), new List<House> { new House(new Room()) });
+
+            _sut.Populate(services);
+            var actual = _sut.GetService<Street>();
+
+            Assert.IsType<Street>(actual);
+            Assert.Equal(1, actual.Houses.First().Room.Beds);
         }
     }
 }
