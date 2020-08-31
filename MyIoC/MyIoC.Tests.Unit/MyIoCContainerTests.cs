@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using MyIoC.Tests.Unit.Contracts;
 using MyIoC.Tests.Unit.Models;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using Xunit;
 
@@ -200,19 +203,33 @@ namespace MyIoC.Tests.Unit
             Assert.IsType<Auditor>(actual);
         }
 
-        //[Fact]
-        //public void PopulateAndGetServiceWhereConstructorParametersContainIEnumerable()
-        //{
-        //    var services = new ServiceCollection();
-        //    services.AddSingleton<Street, Street>();
-        //    //services.AddSingleton(typeof(IEnumerable<House>), new List<House> { new House(new Room()) });
-        //    services.AddSingleton<House, House>();
+        [Fact]
+        public void PopulateAndGetServiceWhereConstructorParametersContainIEnumerable()
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton<Street, Street>();
+            services.AddSingleton<House, House>();
+            services.AddSingleton<Room, Room>();
 
-        //    _sut.Populate(services);
-        //    var actual = _sut.GetService<Street>();
+            _sut.Populate(services);
+            var actual = _sut.GetService<Street>();
 
-        //    Assert.IsType<Street>(actual);
-        //    Assert.Equal(1, actual.Houses.First().Room.Beds);
-        //}
+            Assert.IsType<Street>(actual);
+            Assert.Equal(1, actual.Houses.First().Room.Beds);
+        }
+        
+        [Fact]
+        public void Test()
+        {
+            var house = new House(new Room());
+
+            var method = typeof(MyIoCContainerTests).GetMethod("CreateList");
+            var genericMethod = method.MakeGenericMethod(house.GetType());
+            var actual = genericMethod.Invoke(this, new object[] { house });
+
+            Assert.IsAssignableFrom<IEnumerable<House>>(actual);
+        }
+
+        public List<T> CreateList<T>(T thing) => new List<T> { thing };
     }
 }

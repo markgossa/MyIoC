@@ -3,6 +3,7 @@ using MyIoC.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace MyIoC
 {
@@ -41,6 +42,17 @@ namespace MyIoC
         public object GetService(Type serviceType)
         {
             var serviceDescription = FindServiceType(serviceType);
+
+            if (serviceType.Name == "IEnumerable`1")
+            {
+                var genericTypeArgObject = GetService(serviceType.GenericTypeArguments[0]);
+                var method = typeof(MyIoCContainer).GetMethod(nameof(CreateList));
+                var genericMethod = method.MakeGenericMethod(genericTypeArgObject.GetType());
+                var result = genericMethod.Invoke(this, new object[] { genericTypeArgObject });
+
+                return result;
+            }
+
             IsNullServiceDescription(serviceType, serviceDescription);
 
             if (serviceDescription.ServiceLifetime == ServiceLifetime.Singleton)
@@ -57,6 +69,8 @@ namespace MyIoC
 
             return CreateInstance(serviceDescription.ImplementationType);
         }
+
+        public List<T> CreateList<T>(T thing) => new List<T>() { thing };
 
         public void Populate(IServiceCollection services)
         {
